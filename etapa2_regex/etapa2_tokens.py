@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     # 2. Procesar el dataset real de la Etapa 1
     #    El archivo lo generó tu compañera en etapa1_mt/
-    ruta = "../etapa1_mt/mensajes_normalizados.csv"
+    ruta = "etapa1_mt/mensajes_normalizados.csv"
     df_tokens = procesar_dataset(ruta)
 
     # 3. Guardar resultado para la Etapa 3
