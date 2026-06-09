@@ -1,5 +1,4 @@
-import pandas as pd
-import os
+import csv
 from pathlib import Path
 
 # ------------------------------------------------------------------
@@ -96,51 +95,65 @@ if __name__ == "__main__":
     print("\n  📌 Traza del ejemplo del enunciado:")
     maquina_turing("WIN $1000 now!", mostrar_traza=True)
 
-    # 2. Cargar el dataset con pandas (idea del código de ChatGPT)
+    # 2. Cargar el dataset con la biblioteca estándar de Python
     print("  Cargando dataset...")
     
     # Usar ruta absoluta desde la raíz del proyecto
     project_root = Path(__file__).parent.parent  # sube a SpamScanner2/
     dataset_path = project_root / "data" / "SpamCollectionSpanish.csv"
+    fallback_path = project_root / "dataset_100.csv"
     
+    if not dataset_path.exists() and fallback_path.exists():
+        dataset_path = fallback_path
+
     if not dataset_path.exists():
         print(f"  ❌ Error: No se encontró {dataset_path}")
         exit(1)
-    
-    df = pd.read_csv(dataset_path)
-    
-    # Detectar las columnas del dataset (puede ser v1/v2 o label/text)
-    if 'v1' in df.columns and 'v2' in df.columns:
-        # SMS Spam Collection original de Kaggle
-        df = df.rename(columns={'v1': 'label', 'v2': 'text'})
-        df['label'] = df['label'].map({'ham': 0, 'spam': 1})
-    elif 'label' not in df.columns or 'text' not in df.columns:
-        print(f"  ❌ Error: El dataset debe tener columnas 'label' y 'text' o 'v1' y 'v2'")
-        print(f"  Columnas encontradas: {df.columns.tolist()}")
+
+    with open(dataset_path, newline="", encoding="utf-8") as archivo_csv:
+        lector = csv.DictReader(archivo_csv)
+        filas = list(lector)
+
+    if filas and "v1" in filas[0] and "v2" in filas[0]:
+        mensajes = [{"label": fila["v1"], "text": fila["v2"]} for fila in filas]
+    elif filas and "label" in filas[0] and "text" in filas[0]:
+        mensajes = [{"label": fila["label"], "text": fila["text"]} for fila in filas]
+    elif filas and "label" in filas[0] and "message" in filas[0]:
+        mensajes = [{"label": fila["label"], "text": fila["message"]} for fila in filas]
+    else:
+        print("  ❌ Error: El dataset debe tener columnas 'label' y 'text', 'label' y 'message', o 'v1' y 'v2'")
+        columnas = list(filas[0].keys()) if filas else []
+        print(f"  Columnas encontradas: {columnas}")
         exit(1)
 
     # Tomar 50 ham + 50 spam
-    ham  = df[df['label'] == 0].head(50)
-    spam = df[df['label'] == 1].head(50)
-    df_100 = pd.concat([ham, spam]).reset_index(drop=True)
+    ham = [mensaje for mensaje in mensajes if str(mensaje["label"]).strip().lower() in {"0", "ham"}][:50]
+    spam = [mensaje for mensaje in mensajes if str(mensaje["label"]).strip().lower() in {"1", "spam"}][:50]
+    mensajes_100 = ham + spam
 
-    print(f"  Dataset: {len(df_100)} mensajes ({len(ham)} ham + {len(spam)} spam)\n")
+    print(f"  Dataset: {len(mensajes_100)} mensajes ({len(ham)} ham + {len(spam)} spam)\n")
 
     # 3. Aplicar la MT a todos los mensajes
     print("  Aplicando Máquina de Turing...")
-    df_100['mensaje_limpio'] = df_100['text'].apply(maquina_turing)
+    for mensaje in mensajes_100:
+        mensaje["mensaje_limpio"] = maquina_turing(mensaje["text"])
 
     # 4. Mostrar ejemplos
     print("\n  === EJEMPLOS ANTES Y DESPUÉS ===\n")
-    for i in list(range(5)) + list(range(50, 55)):
-        etiqueta = "SPAM" if df_100['label'].iloc[i] == 1 else "HAM"
-        print(f"  [{etiqueta}] Original : {df_100['text'].iloc[i][:60]}")
-        print(f"  [{etiqueta}] Limpio   : {df_100['mensaje_limpio'].iloc[i][:60]}")
+    indices_ejemplo = list(range(min(5, len(mensajes_100)))) + list(range(50, min(55, len(mensajes_100))))
+    for i in indices_ejemplo:
+        etiqueta = "SPAM" if str(mensajes_100[i]["label"]).strip().lower() in {"1", "spam"} else "HAM"
+        print(f"  [{etiqueta}] Original : {mensajes_100[i]['text'][:60]}")
+        print(f"  [{etiqueta}] Limpio   : {mensajes_100[i]['mensaje_limpio'][:60]}")
         print("  " + "-" * 65)
 
     # 5. Guardar resultado para la Etapa 2
     output_path = project_root / "dataset_100.csv"
-    df_100.to_csv(output_path, index=False)
+    with open(output_path, "w", newline="", encoding="utf-8") as archivo_salida:
+        columnas = ["text", "label", "mensaje_limpio"]
+        escritor = csv.DictWriter(archivo_salida, fieldnames=columnas)
+        escritor.writeheader()
+        escritor.writerows(mensajes_100)
     print("\n  ✅ Etapa 1 completada.")
     print(f"  Archivo guardado: {output_path}")
     print("  Listo para la Etapa 2.\n")
