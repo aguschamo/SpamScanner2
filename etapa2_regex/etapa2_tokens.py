@@ -141,17 +141,17 @@ if __name__ == "__main__":
 
     # 2. Procesar el dataset real de la Etapa 1
     #    El archivo lo generó tu compañera en etapa1_mt/
-    ruta = "etapa1_mt/mensajes_normalizados.csv"
+    ruta = "../etapa1_mt/mensajes_normalizados.csv"
     df_tokens = procesar_dataset(ruta)
 
     # 3. Guardar resultado para la Etapa 3
     df_tokens.to_csv("mensajes_tokenizados.csv", index=False)
 
 # Mostrar ejemplos de SPAM para verificar
-print("\n  === EJEMPLOS SPAM (para verificar) ===\n")
-spam_df = df_tokens[df_tokens['label'] == 1].head(5)
-for i in range(len(spam_df)):
-    print(f"  [SPAM] Texto  : {str(spam_df['text'].iloc[i])[:55]}")
-    print(f"  [SPAM] Tokens : {spam_df['tokens'].iloc[i]}")
-    print(f"  {'─'*60}")
+    print("\n  === EJEMPLOS SPAM (para verificar) ===\n")
+    spam_df = df_tokens[df_tokens['label'] == 1].head(5)
+    for i in range(len(spam_df)):
+        print(f"  [SPAM] Texto  : {str(spam_df['text'].iloc[i])[:55]}")
+        print(f"  [SPAM] Tokens : {spam_df['tokens'].iloc[i]}")
+        print(f"  {'─'*60}")
   
