@@ -1,4 +1,6 @@
 import pandas as pd
+import os
+from pathlib import Path
 
 # ------------------------------------------------------------------
 # Los dos estados de la MT
@@ -69,7 +71,7 @@ def maquina_turing(mensaje, mostrar_traza=False):
 
     # Resultado: unir la cinta y limpiar espacios dobles
     resultado = "".join(cinta)
-    resultado = " ".join(resultado.split())   # ← idea del código de ChatGPT, está buena
+    resultado = " ".join(resultado.split())   # <-- idea del código de ChatGPT, está buena
 
     if mostrar_traza:
         print("  " + "-" * 52)
@@ -96,7 +98,26 @@ if __name__ == "__main__":
 
     # 2. Cargar el dataset con pandas (idea del código de ChatGPT)
     print("  Cargando dataset...")
-    df = pd.read_csv('../SpamCollectionSpanish.csv')
+    
+    # Usar ruta absoluta desde la raíz del proyecto
+    project_root = Path(__file__).parent.parent  # sube a SpamScanner2/
+    dataset_path = project_root / "data" / "SpamCollectionSpanish.csv"
+    
+    if not dataset_path.exists():
+        print(f"  ❌ Error: No se encontró {dataset_path}")
+        exit(1)
+    
+    df = pd.read_csv(dataset_path)
+    
+    # Detectar las columnas del dataset (puede ser v1/v2 o label/text)
+    if 'v1' in df.columns and 'v2' in df.columns:
+        # SMS Spam Collection original de Kaggle
+        df = df.rename(columns={'v1': 'label', 'v2': 'text'})
+        df['label'] = df['label'].map({'ham': 0, 'spam': 1})
+    elif 'label' not in df.columns or 'text' not in df.columns:
+        print(f"  ❌ Error: El dataset debe tener columnas 'label' y 'text' o 'v1' y 'v2'")
+        print(f"  Columnas encontradas: {df.columns.tolist()}")
+        exit(1)
 
     # Tomar 50 ham + 50 spam
     ham  = df[df['label'] == 0].head(50)
@@ -118,7 +139,8 @@ if __name__ == "__main__":
         print("  " + "-" * 65)
 
     # 5. Guardar resultado para la Etapa 2
-    df_100.to_csv('mensajes_normalizados.csv', index=False)
+    output_path = project_root / "dataset_100.csv"
+    df_100.to_csv(output_path, index=False)
     print("\n  ✅ Etapa 1 completada.")
-    print("  Archivo guardado: mensajes_normalizados.csv")
+    print(f"  Archivo guardado: {output_path}")
     print("  Listo para la Etapa 2.\n")
