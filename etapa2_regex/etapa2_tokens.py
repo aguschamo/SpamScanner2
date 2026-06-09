@@ -1,6 +1,11 @@
 #  SpamScanner 2.0 — Etapa 2: Tokenización con Expresiones Regulares
 import re
-import pandas as pd
+import csv
+import sys
+from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 PATRONES = [
 
@@ -105,26 +110,42 @@ def demo():
 def procesar_dataset(ruta_csv):
     """
     Lee el CSV generado por la Etapa 1 y tokeniza cada mensaje.
-    Devuelve el DataFrame con una columna nueva: 'tokens'
+    Devuelve una lista de diccionarios con una columna nueva: 'tokens'
     """
-    df = pd.read_csv(ruta_csv)
+    with open(ruta_csv, newline="", encoding="utf-8") as archivo_csv:
+        lector = csv.DictReader(archivo_csv)
+        mensajes = list(lector)
 
-    print(f"\n  Dataset cargado: {len(df)} mensajes")
+    print(f"\n  Dataset cargado: {len(mensajes)} mensajes")
     print("  Tokenizando...\n")
 
     # Aplicar tokenización a cada mensaje limpio
-    df['tokens'] = df['text'].apply(lambda x: solo_tipos(tokenizar(str(x))))
+    for mensaje in mensajes:
+        texto_para_tokenizar = mensaje.get("mensaje_limpio") or mensaje.get("text") or mensaje.get("message") or ""
+        mensaje["text"] = mensaje.get("text") or mensaje.get("message") or texto_para_tokenizar
+        mensaje["tokens"] = solo_tipos(tokenizar(str(texto_para_tokenizar)))
 
     # Mostrar ejemplos
     print("  === EJEMPLOS DE TOKENIZACIÓN ===\n")
     print(f"  {'─'*60}")
-    for i in range(5):
-        etiqueta = "SPAM" if df['label'].iloc[i] == 1 else "HAM"
-        print(f"  [{etiqueta}] Texto  : {str(df['text'].iloc[i])[:55]}")
-        print(f"  [{etiqueta}] Tokens : {df['tokens'].iloc[i]}")
+    for i in range(min(5, len(mensajes))):
+        etiqueta = "SPAM" if str(mensajes[i]["label"]).strip().lower() in {"1", "spam"} else "HAM"
+        print(f"  [{etiqueta}] Texto  : {str(mensajes[i]['text'])[:55]}")
+        print(f"  [{etiqueta}] Tokens : {mensajes[i]['tokens']}")
         print(f"  {'─'*60}")
 
-    return df
+    return mensajes
+
+
+def guardar_dataset_tokenizado(mensajes, ruta_salida):
+    """Guarda los mensajes tokenizados en un CSV para la Etapa 3."""
+    columnas = ["text", "label", "mensaje_limpio", "tokens"]
+
+    with open(ruta_salida, "w", newline="", encoding="utf-8") as archivo_salida:
+        escritor = csv.DictWriter(archivo_salida, fieldnames=columnas)
+        escritor.writeheader()
+        for mensaje in mensajes:
+            escritor.writerow({columna: mensaje.get(columna, "") for columna in columnas})
 
 
 # ------------------------------------------------------------------
@@ -140,18 +161,19 @@ if __name__ == "__main__":
     demo()
 
     # 2. Procesar el dataset real de la Etapa 1
-    #    El archivo lo generó tu compañera en etapa1_mt/
-    ruta = "etapa1_mt/mensajes_normalizados.csv"
+    project_root = Path(__file__).resolve().parent.parent
+    ruta = project_root / "dataset_100.csv"
     df_tokens = procesar_dataset(ruta)
 
     # 3. Guardar resultado para la Etapa 3
-    df_tokens.to_csv("mensajes_tokenizados.csv", index=False)
+    guardar_dataset_tokenizado(df_tokens, project_root / "mensajes_tokenizados.csv")
+    guardar_dataset_tokenizado(df_tokens, project_root / "etapa2_regex" / "mensajes_tokenizados.csv")
 
 # Mostrar ejemplos de SPAM para verificar
     print("\n  === EJEMPLOS SPAM (para verificar) ===\n")
-    spam_df = df_tokens[df_tokens['label'] == 1].head(5)
-    for i in range(len(spam_df)):
-        print(f"  [SPAM] Texto  : {str(spam_df['text'].iloc[i])[:55]}")
-        print(f"  [SPAM] Tokens : {spam_df['tokens'].iloc[i]}")
+    spam_df = [mensaje for mensaje in df_tokens if str(mensaje["label"]).strip().lower() in {"1", "spam"}][:5]
+    for mensaje in spam_df:
+        print(f"  [SPAM] Texto  : {str(mensaje['text'])[:55]}")
+        print(f"  [SPAM] Tokens : {mensaje['tokens']}")
         print(f"  {'─'*60}")
   
