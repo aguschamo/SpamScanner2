@@ -1,6 +1,10 @@
 import pandas as pd
+from pathlib import Path
 
-df = pd.read_csv('data/raw/SpamCollectionSpanish.csv')
+project_root = Path(__file__).resolve().parent.parent
+raw_dir = project_root / "data" / "raw"
+
+df = pd.read_csv(raw_dir / "SpamCollectionSpanish.csv")
 
 print("Columnas:", df.columns.tolist())
 print("\nCantidad de cada tipo:")
@@ -13,7 +17,7 @@ ham_sample = df[df['label'] == 'ham'].sample(n=50, random_state=42)
 spam_sample = df[df['label'] == 'spam'].sample(n=50, random_state=42)
 
 dataset_100 = pd.concat([ham_sample, spam_sample]).reset_index(drop=True)
-dataset_100.to_csv('data/raw/01_dataset_100.csv', index=False)
+dataset_100.to_csv(raw_dir / "01_dataset_100.csv", index=False)
 
-print("\n✅ ¡Listo! Se creó dataset_100.csv")
+print("\nListo, Se creó dataset_100.csv")
 print(f"Total: {len(dataset_100)} mensajes (50 ham + 50 spam)")
