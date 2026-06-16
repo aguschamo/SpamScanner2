@@ -1,6 +1,6 @@
 import pandas as pd
 
-df = pd.read_csv('SpamCollectionSpanish.csv')
+df = pd.read_csv('data/raw/SpamCollectionSpanish.csv')
 
 print("Columnas:", df.columns.tolist())
 print("\nCantidad de cada tipo:")
@@ -13,7 +13,7 @@ ham_sample = df[df['label'] == 'ham'].sample(n=50, random_state=42)
 spam_sample = df[df['label'] == 'spam'].sample(n=50, random_state=42)
 
 dataset_100 = pd.concat([ham_sample, spam_sample]).reset_index(drop=True)
-dataset_100.to_csv('dataset_100.csv', index=False)
+dataset_100.to_csv('data/raw/01_dataset_100.csv', index=False)
 
 print("\n✅ ¡Listo! Se creó dataset_100.csv")
 print(f"Total: {len(dataset_100)} mensajes (50 ham + 50 spam)")

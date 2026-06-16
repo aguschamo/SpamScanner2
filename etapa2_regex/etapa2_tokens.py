@@ -50,7 +50,7 @@ def main():
     print("  ╚══════════════════════════════════════╝")
 
     project_root = Path(__file__).resolve().parent.parent
-    ruta_entrada = project_root / "dataset_100.csv"
+    ruta_entrada = project_root / "data" / "raw" / "01_dataset_100.csv"
 
     if not ruta_entrada.exists():
         print(f"Error: No se encontró {ruta_entrada}. Ejecute la Etapa 1 primero.")
@@ -63,7 +63,7 @@ def main():
     columna_texto = 'mensaje_limpio' if 'mensaje_limpio' in df.columns else 'text'
     df['tokens'] = df[columna_texto].apply(lambda x: solo_tipos(tokenizar(x)))
 
-    output_path = project_root / "mensajes_tokenizados.csv"
+    output_path = project_root / "data" / "interim" / "02_tokenizados.csv"
     df.to_csv(output_path, index=False)
     print(f"Etapa 2 completada. Archivo guardado: {output_path}")
 

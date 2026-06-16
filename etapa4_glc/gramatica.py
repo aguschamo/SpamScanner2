@@ -130,7 +130,7 @@ def generate_statistics(df_result: pd.DataFrame) -> None:
 
 if __name__ == "__main__":
     project_root = Path(__file__).resolve().parent.parent
-    ruta_entrada = project_root / "resultados_etapa3.csv"
+    ruta_entrada = project_root / "data" / "interim" / "03_clasificados.csv"
 
     if not ruta_entrada.exists():
         print(f"Error: No se encontró {ruta_entrada}")
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     df_result = classify_final_spam(df_spam)
     generate_statistics(df_result)
 
-    output_path = project_root / "etapa4_glc" / "resultados_glc.csv"
+    output_path = project_root / "data" / "processed" / "04_resultados_glc.csv"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df_result.to_csv(output_path, index=False)
     print(f"\nEtapa 4 completada. Archivo guardado: {output_path}")

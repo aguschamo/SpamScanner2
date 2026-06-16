@@ -20,6 +20,19 @@ def clasificar(tokens, umbral=UMBRAL):
     """Clasifica como spam si el score supera el umbral."""
     return "spam" if calcular_score(tokens) > umbral else "ham"
 
+def evaluar_umbrales(df, umbrales=[3, 5, 7]):
+    """Prueba diferentes umbrales y retorna la precisión (Accuracy)."""
+    metricas = {}
+    # Normalizar labels reales a 'spam'/'ham'
+    labels_reales = df['label'].apply(lambda x: 'spam' if str(x) in ['1', 'spam'] else 'ham')
+    
+    for u in umbrales:
+        predicciones = df['tokens'].apply(lambda t: clasificar(t, umbral=u))
+        correctos = sum(1 for p, r in zip(predicciones, labels_reales) if p == r)
+        accuracy = correctos / len(df)
+        metricas[u] = accuracy
+    return metricas
+
 # ------------------------------------------------------------------
 # CAPA DE DATOS (Pandas)
 # ------------------------------------------------------------------
@@ -29,7 +42,7 @@ def main():
     print("  ╚════════════════════════════════════════════╝")
 
     project_root = Path(__file__).resolve().parent.parent
-    ruta_entrada = project_root / "mensajes_tokenizados.csv"
+    ruta_entrada = project_root / "data" / "interim" / "02_tokenizados.csv"
 
     if not ruta_entrada.exists():
         print(f"Error: No se encontró {ruta_entrada}. Ejecute la Etapa 2 primero.")
@@ -41,12 +54,20 @@ def main():
     # Parsear la columna tokens (está como string en el CSV)
     df['tokens'] = df['tokens'].apply(ast.literal_eval)
 
-    print("  Clasificando mensajes...")
+    print("  Evaluando precisión para diferentes umbrales...")
+    metricas = evaluar_umbrales(df)
+    for u, acc in metricas.items():
+        print(f"    Umbral {u}: Accuracy = {acc:.2%}")
+    
+    mejor_u = max(metricas, key=metricas.get)
+    print(f"  Mejor umbral encontrado: {mejor_u}")
+
+    print("  Clasificando mensajes con el mejor umbral...")
     df['score'] = df['tokens'].apply(calcular_score)
-    df['prediccion'] = df['tokens'].apply(clasificar)
+    df['prediccion'] = df['tokens'].apply(lambda t: clasificar(t, umbral=mejor_u))
 
     # Exportar resultados para la Etapa 4
-    output_path = project_root / "resultados_etapa3.csv"
+    output_path = project_root / "data" / "interim" / "03_clasificados.csv"
     df.to_csv(output_path, index=False)
     
     print(f"Etapa 3 completada. Archivo guardado: {output_path}")

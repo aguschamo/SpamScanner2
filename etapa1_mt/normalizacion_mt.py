@@ -48,8 +48,8 @@ def main():
     print("  ╚══════════════════════════════════════╝")
 
     project_root = Path(__file__).resolve().parent.parent
-    dataset_path = project_root / "data" / "SpamCollectionSpanish.csv"
-    fallback_path = project_root / "dataset_100.csv"
+    dataset_path = project_root / "data" / "raw" / "SpamCollectionSpanish.csv"
+    fallback_path = project_root / "data" / "raw" / "01_dataset_100.csv"
 
     ruta_entrada = dataset_path if dataset_path.exists() else fallback_path if fallback_path.exists() else None
 
@@ -77,7 +77,7 @@ def main():
     print(f"Procesando {len(df_100)} mensajes...")
     df_100['mensaje_limpio'] = df_100['text'].apply(maquina_turing)
 
-    output_path = project_root / "dataset_100.csv"
+    output_path = project_root / "data" / "raw" / "01_dataset_100.csv"
     df_100.to_csv(output_path, index=False)
     print(f"Etapa 1 completada. Archivo guardado: {output_path}")
 
